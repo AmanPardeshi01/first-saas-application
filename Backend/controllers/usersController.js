@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // User Registration
 const register = async (req, res) => {
@@ -55,8 +56,8 @@ const register = async (req, res) => {
 //User Login
 const login = async (req, res) => {
     try {
-        const { email, password} = req.body
-        const user = await User.findOne({email});
+        const { email, password } = req.body
+        const user = await User.findOne({ email });
         //Check for the user
         if (!user) {
             res.status(400).json({ message: "User not found" });
@@ -68,21 +69,40 @@ const login = async (req, res) => {
         }
 
         //Generate the token
-        //Set the token in cookie
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        console.log(token);
+
+        // //Set the token in cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
 
         //Send the resposne
         res.status(200).json({
             status: "success",
-            message:"Login Success",
+            message: "Login Success",
             _id: user._id,
-            username:user.username,
-            email:user.email,
+            username: user.username,
+            email: user.email,
         })
 
 
     } catch (error) {
-
+        console.error("Login error:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 
-export { register, login };
+//User Logout
+const logout = async (req, res) => {
+    res.cookie("token", "", {maxAge: 1 });
+    res.status(200).json({
+        status: "success",
+        message: "Logout successful"
+    });
+}
+
+export { register, login, logout };
