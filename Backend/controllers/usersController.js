@@ -105,4 +105,29 @@ const logout = async (req, res) => {
     });
 }
 
-export { register, login, logout };
+// User Profile
+const userProfile = async (req, res) => {
+    try {
+        const id = "689855fef6c744d7d9edf957";
+        const user = await User.findById(id); // ✅ Corrected
+
+        if (user) {
+            res.status(200).json({
+                status: "success",
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                }
+            });
+        } else {
+            res.status(404).json({ message: "User not found" }); // Better status code
+        }
+    } catch (error) {
+        console.error("User profile error:", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+export { register, login, logout, userProfile };
